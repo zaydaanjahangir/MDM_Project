@@ -29,7 +29,8 @@ train_generator = train_datagen.flow_from_directory(
     class_mode='categorical',
     shuffle=True,
     subset='training',
-    seed=42)
+    seed=42,
+    save_format='jpg')
 
 # Data preprocessing for validation data
 val_datagen = ImageDataGenerator(rescale=1./255)
@@ -40,7 +41,8 @@ val_generator = val_datagen.flow_from_directory(
     batch_size=batch_size,
     class_mode='categorical',
     shuffle=False,
-    seed=42)
+    seed=42,
+    save_format='jpg')
 
 # Build the CNN model
 model = Sequential()
