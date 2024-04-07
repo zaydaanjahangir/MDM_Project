@@ -1,8 +1,10 @@
 import os
 import numpy as np
-from tensorflow.keras.preprocessing.image import ImageDataGenerator
 from tensorflow.keras.models import Sequential
 from tensorflow.keras.layers import Conv2D, MaxPooling2D, Flatten, Dense, Dropout
+from tensorflow.keras.optimizers import Adam
+from tensorflow.keras.preprocessing.image import ImageDataGenerator
+from tensorflow.keras.applications import VGG16  # Import VGG16 model class
 
 # Define constants
 image_width = 256
@@ -14,6 +16,23 @@ num_classes = 14
 # Define paths to the training and validation data
 train_data_dir = 'dataset/train'
 validation_data_dir = 'dataset/val'
+
+# Load pre-trained VGG16 model (excluding top layers)
+pretrained_weights_path = 'vgg16_weights_tf_dim_ordering_tf_kernels_notop.h5'
+pretrained_model = VGG16(weights=pretrained_weights_path, include_top=False, input_shape=(image_width, image_height, 3))
+
+# Build the model on top of the pre-trained VGG16
+model = Sequential()
+model.add(pretrained_model)
+model.add(Flatten())
+model.add(Dense(512, activation='relu'))
+model.add(Dropout(0.5))
+model.add(Dense(num_classes, activation='softmax'))
+
+# Compile the model
+model.compile(optimizer=Adam(),
+              loss='categorical_crossentropy',
+              metrics=['accuracy'])
 
 # Data preprocessing and augmentation for training data
 train_datagen = ImageDataGenerator(
@@ -27,10 +46,7 @@ train_generator = train_datagen.flow_from_directory(
     target_size=(image_width, image_height),
     batch_size=batch_size,
     class_mode='categorical',
-    shuffle=True,
-    subset='training',
-    seed=42,
-    save_format='jpg')
+    shuffle=True)
 
 # Data preprocessing for validation data
 val_datagen = ImageDataGenerator(rescale=1./255)
@@ -40,29 +56,7 @@ val_generator = val_datagen.flow_from_directory(
     target_size=(image_width, image_height),
     batch_size=batch_size,
     class_mode='categorical',
-    shuffle=False,
-    seed=42,
-    save_format='jpg')
-
-# Build the CNN model
-model = Sequential()
-model.add(Conv2D(32, (3, 3), activation='relu', input_shape=(image_width, image_height, 3)))
-model.add(MaxPooling2D((2, 2)))
-model.add(Conv2D(64, (3, 3), activation='relu'))
-model.add(MaxPooling2D((2, 2)))
-model.add(Conv2D(128, (3, 3), activation='relu'))
-model.add(MaxPooling2D((2, 2)))
-model.add(Conv2D(128, (3, 3), activation='relu'))
-model.add(MaxPooling2D((2, 2)))
-model.add(Flatten())
-model.add(Dense(512, activation='relu'))
-model.add(Dropout(0.5))
-model.add(Dense(num_classes, activation='softmax'))
-
-# Compile the model
-model.compile(optimizer='adam',
-              loss='categorical_crossentropy',
-              metrics=['accuracy'])
+    shuffle=False)
 
 # Train the model
 history = model.fit(
@@ -73,4 +67,4 @@ history = model.fit(
     validation_steps=val_generator.samples // batch_size)
 
 # Save the trained model
-model.save('flower_classifier_model.h5')
+model.save('flower_classifier_model_transfer_learning.h5')
