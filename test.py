@@ -11,7 +11,10 @@ test_data_dir = 'dataset/val'
 model = load_model(model_path)
 
 # Get the class labels
-class_labels = sorted(os.listdir(os.path.join(test_data_dir)))
+class_labels = sorted(
+    label for label in os.listdir(os.path.join(test_data_dir)) if not label.startswith('classname.txt'))
+print(class_labels)
+
 
 # Function to preprocess images for prediction
 def preprocess_image(image_path, target_size=(256, 256)):
@@ -19,6 +22,7 @@ def preprocess_image(image_path, target_size=(256, 256)):
     img_array = image.img_to_array(img)
     img_array = np.expand_dims(img_array, axis=0)
     return img_array
+
 
 # Function to perform predictions on a single image
 def predict_single_image(image_path):
@@ -28,6 +32,7 @@ def predict_single_image(image_path):
     predicted_class = class_labels[predicted_class_index]
     confidence = predictions[0][predicted_class_index]
     return predicted_class, confidence
+
 
 # Initialize variables for accuracy calculation
 total_images = 0
@@ -40,14 +45,18 @@ for class_label in class_labels:
     if os.path.isdir(class_dir):
         for item in os.listdir(class_dir):
             image_path = os.path.join(class_dir, item)
-            if os.path.isfile(image_path) and item.lower().endswith(('.png', '.jpg', '.jpeg')):
+            if os.path.isfile(image_path) and item.lower().endswith(('.png', '.jpg', '.jpeg')) and not item.startswith(
+                    'classname.txt'):
                 predicted_class, confidence = predict_single_image(image_path)
                 actual_class = class_label
                 total_images += 1
                 if actual_class == predicted_class:
                     correct_predictions += 1
-                print(f"Image: {item}, Predicted Class: {predicted_class}, Actual Class: {actual_class}, Confidence: {confidence}")
+                print(
+                    f"Image: {item}, Predicted Class: {predicted_class}, Actual Class: {actual_class}, Confidence: {confidence :.3f}")
 
 # Calculate accuracy
 accuracy = correct_predictions / total_images
 print(f"Total Images: {total_images}, Correct Predictions: {correct_predictions}, Accuracy: {accuracy * 100:.2f}%")
+
+# Total Images: 98, Correct Predictions: 63, Accuracy: 64.29%
